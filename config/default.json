@@ -1,0 +1,5 @@
+{
+  "mongoURI": "MONGOURI",       // This will change after adding this file to .gitignore
+  "jwtSecret": "123456",        // This will change after adding this file to .gitignore
+  "jwtSecretAdmin": "12345678"  // This will change after adding this file to .gitignore
+}
