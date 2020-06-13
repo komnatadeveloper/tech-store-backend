@@ -45,6 +45,7 @@ router.post(
         stockStatus,
         category,
         mainImageIndex,
+        specifications
       } = jsonObject;
       product.brand = brand;
       product.productNo = productNo;
@@ -53,13 +54,38 @@ router.post(
       product.stockStatus = stockStatus;
       product.category = category;
 
+      console.log('ProductRouter -> addProduct -> specifications -> ',specifications);
+      // Check specifications
+      if(specifications ) {
+        if(specifications.length > 0) {
+          let isSpecificationsOk = true;
+          specifications.forEach(item => {
+            if (!item.key || !item.value ) {
+              isSpecificationsOk = false;
+            } else if (typeof (item.key) !== 'string' || typeof (item.value) !== 'string' ) {
+              isSpecificationsOk = false;
+            } else if (item.key.length < 2 || item.value.length < 2) {
+              isSpecificationsOk = false;
+            }
+          })
+          if(!isSpecificationsOk) {
+            return res
+              .status(400)
+              .json({
+                errors: [{ msg: "Specifications Data has errors!" }],
+            });
+          }
+        }
+      } // End of Check specifications
+      product.specifications = specifications;
+
       console.log("mainImageIndex ->", mainImageIndex);
       // Resize, Save to DB, and create List of IMAGES
       const imageList = [];
       if (req.files.length > 0) {
         for (let i = 0; i < req.files.length; i++) {
           const picture = new Picture();
-          picture.image = await resizeFile(req.files[i], 500, 375);
+          picture.image = await resizeFile(req.files[i], 500, 300);
           await picture.save();
           console.log("picture _id ->", picture._id);
           imageList.push({
@@ -86,24 +112,41 @@ router.post(
 
 // Get Products
 router.get(
-  "/product/",
+  "/product",
 
   async (req, res) => {
+    console.log(req.query.categoryId)
+    console.log('Product Search by Category ID -> Category Id ->', req.query.categoryId)
     try {
       const productList = await Product.find({
-        category: req.body.categoryId
+        category: req.query.categoryId
       });
       console.log("Product Search by Category ID -> Product Count ->", productList.length);
-      res.status(200).json({
-        msg: "Product endpoint",
-        productList,
-      });
+      res.status(200).json(
+        productList
+      );
     } catch (err) {
       console.error(err.message);
       res.status(500).send("Server Error");
     }
   }
 );
+
+// Get Single Image
+router.get( 
+  '/images/:imageId',
+  async (req, res) => {
+    try {
+      const picture = await Picture.findById(req.params.imageId);
+      console.log('ProductRouter -> get Image-> picture.id ->', picture)
+      res.set('Content-Type', 'image/jpeg')
+      res.send(picture.image)
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+)
 
 
 
