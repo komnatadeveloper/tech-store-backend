@@ -43,6 +43,7 @@ const UserSchema = new Schema({
   },
   balance: {
     type: Number, // Minus if user should pay, Plus if user has paid more than necessary
+    default: 0.00
   },
   orders: [
     {
@@ -52,6 +53,12 @@ const UserSchema = new Schema({
       },
     },
   ],
+  favorites: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+    },
+  ]
 });
 
 const User = mongoose.model("user", UserSchema);

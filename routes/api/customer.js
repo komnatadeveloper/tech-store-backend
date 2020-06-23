@@ -1,16 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const Customer = require("../../models/Customer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const config = require("config");
+// Models
+const Customer = require("../../models/Customer");
+const Product = require("../../models/Product");
+
 // Middleware
 const { check, validationResult } = require("express-validator");
-const authAdminMiddleware = require("../../middleware/authAdmin");
+// const authAdminMiddleware = require("../../middleware/authAdmin");
+const authCustomerMiddleware = require("../../middleware/authCustomer");
 
 // Sign Up
 router.post(
-  '/signup', 
+  '/auth/signup', 
   [  // Express Validator
     check("email", "Please include a valid email").isEmail(),
     check(
@@ -57,7 +61,10 @@ router.post(
         { expiresIn: 360000 },
         (err, token) => {
           if (err) throw err;
-          res.status(200).json({ token });
+          res.status(200).json({
+            token,
+            userId : customer._id 
+          });
         }
       );
 
@@ -71,20 +78,142 @@ router.post(
       res.status(500).send("Server Error");
     }
   }
+);  // End of Sign Up
+
+
+
+// Sign in
+router.post(
+  "/auth/signin", 
+  [  // Express Validator
+    check("email", "Please include a valid email").isEmail(),
+    check(
+      "password",
+      "Please enter a password with 6 or more characters"
+    ).isLength({ min: 6 })
+  ], 
+  async (req, res) => {
+    console.log('customerRouter -> signin -> email, password ->', req.body.email, req.body.password)
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array(),
+      });
+    }
+
+    try {
+      const { email, password } = req.body;
+      // Check if customer exists
+      const customer = await Customer.findOne({ email })
+      if (!customer) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] })
+      }
+      // Confirm password
+      const isMatch = await bcrypt.compare(password, customer.password);
+      if (!isMatch) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] })
+      }
+      // delete password before sending customer info
+      customer.password = undefined;
+      // Return jsonwebtoken
+      const payload = {
+        user: {
+          id: customer._id.toString(),
+        },
+      };
+      jwt.sign(
+        payload,
+        config.get("jwtSecret"),
+        { expiresIn: 360000 },
+        (err, token) => {
+          if (err) throw err;
+          res.status(200).json({ 
+            token,
+            customer
+          });
+        }
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
 );
 
-// Get Categories
-router.get("/", async (req, res) => {
-  try {
-    const categories = await Category.find({});
-    res.status(200).json(    
-      categories,
-    );
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
+// Add Product to favorites
+router.post(
+  "/product/addToFav/:productId",
+  authCustomerMiddleware,
+  async (req, res) => {
+    console.log('customerRouter -> addToFavorites -> customerId ->', req.customerId);
+    try {
+      const {productId} = req.params;
+      const customer = await Customer.findById(req.customerId);
+      if ( !customer ) {
+        return res.status(404).json({ msg: 'User does not exist!' });
+      }
+      const product = await Product.findById(productId);
+      if ( !product ) {
+        return res.status(404).json({ msg: 'Product does not exist!' });
+      }
+      if(!customer.favorites) {
+        customer.favorites = [];
+      }
+      // If product is already favorite ? remove : add
+      let index = customer.favorites.indexOf(productId);
+      if( index >= 0 ) {
+        customer.favorites.splice(index, 1);
+      } else {
+        customer.favorites.push(productId);
+      }
+      await customer.save();
+      return res.status(200).json({
+        favorites: customer.favorites
+      })
+    } catch ( err ) {
+      console.error(err.message)
+      res.status(500).send('Server Error')
+    }
   }
-});
+); // End of  Add Product to favorites
+
+
+
+// Get products by List of IDs
+router.post(
+  "/product/productList",
+  authCustomerMiddleware,
+  async (req, res) => {
+    console.log('customerRouter -> getProductsById -> customerId ->', req.customerId);
+    console.log('customerRouter -> getProductsById -> request.body ->', req.body);
+    try {
+      const customer = await Customer.findById(req.customerId);
+      if (!customer) {
+        return res.status(404).json({ msg: 'User does not exist!' });
+      }
+
+      const productQuery = req.body.productList.map( productId => (
+        { _id: productId }
+      ))
+      const productListFromDB = await Product.find(
+        {
+          $or: [ ...productQuery ]
+        }
+      );
+      console.log('customerRouter -> getProductsById -> productListFromDB ->', productListFromDB);
+      res.status(200).json(
+        productListFromDB,
+      );
+
+    } catch (err) {
+      console.error(err.message)
+      res.status(500).send('Server Error')
+    }
+
+  }
+);
+
+
 
 
 module.exports = router;

@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
+// Models
 const Picture = require("../../models/Picture");
 const Product = require("../../models/Product");
+const Category = require("../../models/Category");
 const {
   fileCheck,
   resizeFile,
@@ -110,10 +112,51 @@ router.post(
   }
 )
 
+
+// Delete a Product
+router.delete(
+  "/product/:productId",
+  authAdminMiddleware, 
+  async (req, res) => {
+    console.log('productRouter -> deleteProduct  FIRED')
+    try {
+      const productId =   req.params.productId;
+      if( !productId ) {
+        return res.status(400).json({
+          errors: [{ msg: "ID of Product to Delete is not valid!" }],
+        });
+      }
+      if( typeof(productId) !== 'string' || productId === '' ) {
+        return res.status(400).json({
+          errors: [{ msg: "ID of Product to Delete is not valid!" }],
+        });
+      }
+      const product = await Product.findById(productId);
+      for( let i = 0; i < product.imageList.length; i++ ) {
+        const picture = await Picture.findById(
+          product.imageList[i].imageId
+        );
+        if( !picture ) {
+          // do smt
+        } else {
+          await picture.remove();
+        }
+      }
+      await product.remove(); 
+      res.status(200).json({
+        msg: "Product has been deleted successfully",
+        product,
+      });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+)
+
 // Get Products
 router.get(
   "/product",
-
   async (req, res) => {
     console.log(req.query.categoryId)
     console.log('Product Search by Category ID -> Category Id ->', req.query.categoryId)
@@ -121,6 +164,22 @@ router.get(
       const productList = await Product.find({
         category: req.query.categoryId
       });
+      console.log('Product Search by Category ID -> req.query.brandList->', req.query.brandList)
+      // İf Admin-Dashboard wants to see brandList to filter
+      if (req.query.brandList === '1' && req.query.onlyFilterList === '1' ) {
+        console.log('Product Search by Category ID -> request for brandList ->')
+        let brandList = [];
+        for(let i = 0; i < productList.length; i++) {
+          let index = brandList.indexOf(productList[i].brand)
+          if(index < 0) {
+            brandList.push(productList[i].brand);
+          }
+        }
+        console.log('Product Search by Category ID -> brandList ->', brandList);
+        return res.status(200).json({
+          brandList
+        });
+      }
       console.log("Product Search by Category ID -> Product Count ->", productList.length);
       res.status(200).json(
         productList
@@ -131,6 +190,61 @@ router.get(
     }
   }
 );
+
+
+// Query Products
+router.post(
+  "/query",
+  async (req, res) => {
+    const search = req.query.search;
+    console.log('productRouter -> Query Products -> query Text ->', search);
+    try {
+      const categoryList = await Category.find({
+        title: {
+          $regex: new RegExp(search),
+          $options: "i" // case Insensitive
+        }
+      })
+      const categoryOrList = categoryList.map(
+        (categoryItem) => {
+          return {
+          category: categoryItem._id
+        }}
+      );
+      // console.log('categoryOrList ->', categoryOrList)
+      // console.log('categoryList ->', categoryList);
+      const productList = await Product.find({
+        $or: [
+          {
+            brand: {
+              $regex: new RegExp(search),
+              $options: "i" // case Insensitive
+            }
+          },
+          {
+            productNo: {
+              $regex: new RegExp(search),
+              $options: "i" // case Insensitive
+            }
+          },
+          // {
+          //   category: '5ee2a9d9d8bdcc49c47a8812'
+          // }
+          ...categoryOrList
+        ]
+      });
+       
+      return res.status(200).json({
+        productList
+      });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+
 
 // Get Single Image
 router.get( 

@@ -3,6 +3,7 @@ import CategoryScreen from "./category/CategoryScreen";
 import  ProductScreen  from "./product/ProductScreen";
 import  AddProductScreen  from "./add-product/AddProductScreen";
 import NotFound from "./404/NotFound";
+import  FeaturedScreen  from "./featured/FeaturedScreen";
 
 
 
@@ -14,4 +15,5 @@ export {
   ProductScreen,
   AddProductScreen,
   NotFound,
+  FeaturedScreen
 };

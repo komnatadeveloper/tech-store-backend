@@ -41,3 +41,17 @@ export const handleRawCategories = (rawCategories) => {
   );
   return mainCategories;
 };
+
+
+
+export const imageUrlHelper =  ({ imageId }) => {
+  return '/api/product/images/' + imageId;
+}
+export const mainImageUrlHelper =  ({ imageList }) => {
+  const mainImageId = imageList.filter(
+    imageItem => imageItem.isMain === true
+  )[0].imageId
+  return '/api/product/images/' + mainImageId;
+}
+
+

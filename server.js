@@ -6,7 +6,8 @@ const path = require("path");
 const categoryRouter = require('./routes/api/category');
 const productRouter = require('./routes/api/product');
 const adminAuthRouter = require('./routes/api/adminAuth');
-const customerAuthRouter = require('./routes/api/customer');
+const customerRouter = require('./routes/api/customer');
+const featureRouter = require('./routes/api/feature');
 
 
 
@@ -23,7 +24,8 @@ app.use(express.json({ extended: false }));
 app.use('/api/category', categoryRouter);
 app.use('/api/product', productRouter);
 app.use("/api/admin-auth", adminAuthRouter);
-app.use("/api/customer-auth", customerAuthRouter);
+app.use("/api/customer", customerRouter);
+app.use("/api/feature", featureRouter);
 
 // WE ARE COMMENTING TO BE ABLE TO UPLOAD TO HEROKU
 app.get('/', (req, res) => {

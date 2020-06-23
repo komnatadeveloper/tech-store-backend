@@ -4,6 +4,8 @@ const Category = require("../../models/Category");
 // Middleware
 const { check, validationResult } = require("express-validator");
 const authAdminMiddleware = require("../../middleware/authAdmin");
+
+
 // Add a Category
 router.post(
   '/',  
@@ -41,11 +43,91 @@ router.post(
           errors: [{ msg: "Please Select Level of Category!" }],
         });
       } else {
-        if(isMainCategory) {category.isMainCategory = isMainCategory}
-        if(isSecondLevelCategory) {category.isSecondLevelCategory = isSecondLevelCategory}
-        if(isThirdLevelCategory) {category.isThirdLevelCategory = isThirdLevelCategory}
+        let counter = 0;
+        if(isMainCategory) {
+          category.isMainCategory = isMainCategory;
+          counter++;
+        }
+        if(isSecondLevelCategory) {
+          category.isSecondLevelCategory = isSecondLevelCategory;
+          counter++;
+        }
+        if(isThirdLevelCategory) {
+          category.isThirdLevelCategory = isThirdLevelCategory;
+          counter++;
+        }
+        if( counter !== 1 ) {
+          return res.status(400).json({
+            errors: [{ msg: "Please Select Level of Category!" }],
+          });
+        }
       }
-      category.parentList = parentList;
+      if ( isMainCategory ) {
+        category.parentList = [];
+      }
+      if (isSecondLevelCategory) {
+        let isMainLevelParentFound = false;
+        for (let i = 0; i < parentList.length; i++) {
+          let parentItem = await Category.findById(parentList[i])
+          if(!parentItem) {
+            return res.status(400).json({
+              errors: [{ msg: "Invalid parent category ID" }],
+            });
+          }
+          if( parentItem.isMainCategory === true ) {
+            isMainLevelParentFound =true;
+          }
+        }
+        if ( !isMainLevelParentFound ) {
+          return res.status(400).json({
+            errors: [{ msg: "Invalid parent category ID" }],
+          });
+        }
+        category.parentList = parentList;
+      }
+      if(isThirdLevelCategory) {
+        const parentDocumentList = [];
+        let isMainLevelParentFound = false;
+        let isSecondLevelParentFound = false;
+        for(let i = 0; i < parentList.length; i++) {
+          const parentItem = await Category.findById(parentList[i]);
+          if(!parentItem) {
+            return res.status(400).json({
+              errors: [{ msg: "Invalid parent category ID" }],
+            });
+          }
+          if(parentItem.isMainCategory === true) {
+            isMainLevelParentFound = true;
+          }
+          if (parentItem.isSecondLevelCategory === true) {
+            isSecondLevelParentFound = true;
+          }
+          parentDocumentList.push(parentItem);          
+        }
+        if ( !isSecondLevelParentFound && !isMainLevelParentFound ) {
+          return res.status(400).json({
+            errors: [{ msg: "Invalid parent category ID" }],
+          });
+        }
+        if (isSecondLevelParentFound && !isMainLevelParentFound) {
+          let secondLevelParent = parentDocumentList.filter(
+            element => element.isSecondLevelCategory === true
+          )[0];
+          for (let i = 0; i < secondLevelParent.parentList.length; i++) {
+            let parentItem = await Category.findById(secondLevelParent.parentList[i]);
+            if ( !parentItem ) {
+              return res.status(500).send("Server Error");
+            }
+            if ( parentItem.isMainCategory === true ) {
+              isMainLevelParentFound = true;
+              category.parentList = [ parentItem._id, ...parentList];
+            }
+          }
+          if ( !isMainLevelParentFound ) {
+            return res.status(500).send("Server Error");
+          }          
+        }
+      }      
       category.childrenList = [];
       await category.save();
       res.status(200).json({
