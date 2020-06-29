@@ -16,6 +16,10 @@ const CategorySchema = new Schema({
     type: Boolean,
     default: false,
   },
+  imageId: {
+    type: Schema.Types.ObjectId,
+    ref: "Picture"
+  },
   isSecondLevelCategory: {
     type: Boolean,
     default: false,
@@ -25,6 +29,10 @@ const CategorySchema = new Schema({
     default: false,
   },
   isSpecial: {
+    type: Boolean,
+    default: false,
+  },
+  showOnHomePage: {
     type: Boolean,
     default: false,
   },

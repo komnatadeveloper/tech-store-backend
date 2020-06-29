@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { Redirect } from 'react-router-dom'
 import { Form, Button } from 'react-bootstrap'
 import { addProduct } from '../../actions/productActions';
-import { queryCategories } from '../../actions/categoryActions';
+import { queryCategories, querySpecialCategories } from '../../actions/categoryActions';
 
 
 const AddProductScreen = ({
@@ -14,6 +14,7 @@ const AddProductScreen = ({
   // from actions
   addProduct,
   queryCategories,
+  querySpecialCategories
 }) => {
   const initialFormData = {
     brand: "",
@@ -27,8 +28,13 @@ const AddProductScreen = ({
   const [formData, setFormData] = useState(initialFormData);
   const [imageList, setImageList] = useState([]);
   const [categoryTitle, setCategoryTitle] = useState("");
-  const [categoryItem, setCategoryItem] = useState(null);
+  const [specialCategoryTitle, setSpecialCategoryTitle] = useState('');
+  const[specialCategory, setSpecialCategory] = useState([]);
+  // const [categoryItem, setCategoryItem] = useState(null);
   const [categoryQueryText, setCategoryQueryText] = useState("");
+  const [specialCategoryQueryText, setSpecialCategoryQueryText] = useState("");
+  const [showAddSpecialCategory, setShowAddSpecialCategory] = useState(false);
+  const [specialCategoryList, setSpecialCategoryList] = useState([]);
   const {
     brand,
     productNo,
@@ -60,7 +66,7 @@ const AddProductScreen = ({
           <Form.Control
             type='file'
             placeholder='Select Image'
-            name='image'
+            name='image'            
             multiple
             onChange={(e) => {
               setImageList([...imageList, ...e.target.files]);
@@ -130,39 +136,163 @@ const AddProductScreen = ({
         )}
 
         <Form.Group controlId='formBasicEmail'>
-          <div className='d-flex flex-row justify-content-start'>
-            <Form.Label>Category:</Form.Label>
-            <Form.Label className='ml-4'>{categoryTitle}</Form.Label>
-          </div>
-          <Form.Control
-            type='text'
-            placeholder='Search Categories'
-            name='categoryQueryText'
-            value={categoryQueryText}
-            onChange={(e) => {
-              setCategoryQueryText(e.target.value);
-              queryCategories(e.target.value);
-            }}
-          />
-          {queriedCategories.length > 0 &&
-            queriedCategories.map((categoryItem, index) => (
-              <h3
-                key={index}
-                className='text-center border border-primary p-1 my-1'
+          <div className='d-flex flex-row justify-content-between'>
+            <div 
+              className='d-flex flex-row justify-content-start my-auto'
+            >
+              <Form.Label className='my-auto'>Category:</Form.Label>
+              <Form.Label className='ml-4 my-auto font-weight-bold'>{categoryTitle}</Form.Label>
+            </div>
+            {
+              categoryTitle !== '' && (
+                <Button
                 onClick={() => {
+                  setCategoryTitle('');
                   setFormData({
                     ...formData,
-                    category: [categoryItem._id],
-                  });
-                  setCategoryTitle(categoryItem.title);
-                  setCategoryQueryText("");
-                  queryCategories("");
+                    category: [],
+                  })
+                  setCategoryQueryText('');
+                  queryCategories('');
                 }}
-              >
-                {categoryItem.title}
-              </h3>
-            ))}
+                >
+                  Edit Category
+                </Button>
+              )
+            }
+          </div>
+          {
+            categoryTitle.toString() === '' && (
+              <React.Fragment>
+                <Form.Control
+                  type='text'
+                  placeholder='Search Categories'
+                  name='categoryQueryText'
+                  value={categoryQueryText}
+                  onChange={(e) => {
+                    setCategoryQueryText(e.target.value);
+                    queryCategories(e.target.value);
+                  }}
+                />
+                {queriedCategories.length > 0 &&
+                  queriedCategories.map((categoryItem, index) => (
+                    <h3
+                      key={index}
+                      className='text-center border border-primary p-1 my-1'
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          category: [categoryItem._id],
+                        });
+                        setCategoryTitle(categoryItem.title);
+                        setCategoryQueryText("");
+                        queryCategories("");
+                      }}
+                    >
+                      {categoryItem.title}
+                    </h3>
+                  ))}
+              </React.Fragment>
+            )
+          }          
         </Form.Group>
+        {
+          !showAddSpecialCategory && (
+            <Button
+              className='mb-3'
+              onClick={() => {
+                setShowAddSpecialCategory(!showAddSpecialCategory);
+              }}
+            >
+              Add Special Category
+            </Button>
+          )
+        }
+        {
+          showAddSpecialCategory && (
+            <div className='d-flex flex-row align-items-center mb-3'>
+              <div className='flex-fill'>
+                {
+                  specialCategoryTitle === '' && (                  
+                    <Form.Control
+                      type='text'
+                      placeholder='Search Special Categories'
+    
+                      name='categoryQueryText'
+                      value={specialCategoryQueryText}
+                      onChange={(e) => {
+                        setSpecialCategoryQueryText(e.target.value);
+                        querySpecialCategories(e.target.value)
+                          .then(res => {
+                            setSpecialCategoryList(res)
+                          })
+                      }}
+                    />
+                  )
+                }
+                {
+                  specialCategoryTitle !== '' && (
+                    <div className='my-auto'>
+                      <Form.Label className='my-auto'>Special Category:</Form.Label>
+                      <Form.Label className='ml-4 my-auto font-weight-bold'>{specialCategoryTitle}</Form.Label>
+                    </div>
+                  )
+                }
+              </div>
+
+
+              
+              <div  className=' d-flex flex-row'>
+                {
+                  specialCategoryTitle !== '' && (
+                    <Button 
+                      className='mr-2'
+                      onClick={() => {
+                        console.log('Edit Special Cat')
+                        setSpecialCategoryTitle('');
+                        setSpecialCategory([]);
+                      }}
+                    >
+                      Edit Special Cat
+                    </Button>
+                  )
+                }
+                <Button
+                  className='d-block'
+                  variant='danger'
+                  onClick={() => {
+                    setSpecialCategory([]);
+                    querySpecialCategories('');  
+                    setSpecialCategoryTitle('');
+                    setShowAddSpecialCategory(!showAddSpecialCategory);                 
+                  }}
+                >
+                  Close Special 
+                </Button>
+              </div>
+            </div>
+          )
+        }
+        {specialCategoryList.length > 0 &&
+          specialCategoryList.map((categoryItem, index) => (
+            <h3
+              key={index}
+              className='text-center border border-primary p-1 my-1'
+              onClick={() => {
+                setSpecialCategory([categoryItem._id]);
+                setSpecialCategoryTitle(categoryItem.title);
+                setSpecialCategoryQueryText("");
+                setSpecialCategoryList([])
+              }}
+            >
+              {categoryItem.title}
+            </h3>
+          ))}
+          {
+          specialCategoryList.length > 0 && (
+            <div className='mb-3'></div>
+          )
+          }
         <Form.Group controlId='formBasicEmail'>
           <Form.Label>Brand</Form.Label>
           <Form.Control
@@ -265,12 +395,20 @@ const AddProductScreen = ({
               formData: {
                 ...formData,
                 price: parseFloat(formData.price),
-                category,
+                category: [
+                  ...category,
+                  ...specialCategory
+                ]
               },
               imageList,
               callBack: () => {
                 setFormData(initialFormData);
+                setCategoryTitle('');
                 setImageList([]);
+                setSpecialCategory([]);
+                setSpecialCategoryTitle('');
+                setSpecialCategoryList([]);
+                setSpecialCategoryQueryText('');
               },
             });
           }}
@@ -290,4 +428,11 @@ const mapStateToProps = (state) => ({
 
 
 
-export default connect(mapStateToProps, { addProduct, queryCategories })(AddProductScreen);
+export default connect(
+  mapStateToProps, 
+  { 
+    addProduct, 
+    queryCategories,
+    querySpecialCategories
+  }
+)(AddProductScreen);

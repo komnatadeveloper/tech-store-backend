@@ -4,7 +4,7 @@ import { addCategory } from "../../actions/categoryActions";
 
 import { Form, Button } from "react-bootstrap";
 
-const MainCategoryAddComponent = ({
+const SpecialCategoryAddComponent = ({
   // from state
   // .....
   // from actions
@@ -12,6 +12,7 @@ const MainCategoryAddComponent = ({
 }) => {
   const [title, setTitle] = useState("");
   const [imageToAdd, setImageToAdd] = useState(null);
+  const [showOnHomePage, setShowOnHomePage] = useState(false)
 
   const ImageComponent = () => {
     const objectUrl = URL.createObjectURL(imageToAdd);
@@ -56,6 +57,16 @@ const MainCategoryAddComponent = ({
               setTitle(e.target.value);
             }}
           />
+          <Form.Group controlId="formBasicCheckbox">
+            <Form.Check 
+              type="checkbox" 
+              label="Show on Home Page" 
+              checked={showOnHomePage}
+              onClick= { (e) => {
+                setShowOnHomePage(!showOnHomePage);
+              }}
+            />
+          </Form.Group>
         </Form.Group>
 
         <Button
@@ -64,23 +75,25 @@ const MainCategoryAddComponent = ({
             addCategory({
               formData: {
                 title: title,
-                isMainCategory: true,
+                isSpecial: true,
                 parentList: [],
+                showOnHomePage,
               },
               image: imageToAdd,
               cb: () => {
-                console.log('MainCategoryAddComponent -> addCategory -> callback FIRED');
+                console.log('SpecialCategoryAddComponent -> addCategory -> callback FIRED');
                 setImageToAdd(null);
                 setTitle('');
               }
             });
           }}
         >
-          Add Main Category
+          Add Special Category
         </Button>
       </Form>
     </div>
   );
 };
 
-export default connect(null, { addCategory })(MainCategoryAddComponent);
+export default connect(null, { addCategory })(SpecialCategoryAddComponent);
+

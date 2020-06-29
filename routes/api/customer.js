@@ -6,6 +6,7 @@ const config = require("config");
 // Models
 const Customer = require("../../models/Customer");
 const Product = require("../../models/Product");
+const Category = require("../../models/Category");
 
 // Middleware
 const { check, validationResult } = require("express-validator");
@@ -212,6 +213,61 @@ router.post(
 
   }
 );
+
+// Query Products
+router.post(
+  "/product/query",
+  authCustomerMiddleware,
+  async (req, res) => {
+    const search = req.query.search;
+    console.log('customerRouter -> Query Products -> query Text ->', search);
+    try {
+      const categoryList = await Category.find({
+        title: {
+          $regex: new RegExp(search),
+          $options: "i" // case Insensitive
+        }
+      })
+      const categoryOrList = categoryList.map(
+        (categoryItem) => {
+          return {
+            category: categoryItem._id
+          }
+        }
+      );
+      // console.log('categoryOrList ->', categoryOrList)
+      // console.log('categoryList ->', categoryList);
+      const productList = await Product.find({
+        $or: [
+          {
+            brand: {
+              $regex: new RegExp(search),
+              $options: "i" // case Insensitive
+            }
+          },
+          {
+            productNo: {
+              $regex: new RegExp(search),
+              $options: "i" // case Insensitive
+            }
+          },
+          ...categoryOrList
+        ]
+      });
+
+      return res.status(200).json(
+        productList
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+
+
+
 
 
 

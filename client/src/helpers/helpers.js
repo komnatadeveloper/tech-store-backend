@@ -1,6 +1,9 @@
 
 // Create Category Hierarchy
 export const handleRawCategories = (rawCategories) => {
+  let rawSpecialCategories = rawCategories.filter(
+    (categoryItem) => categoryItem.isSpecial === true
+  );
   let rawMainCategories = rawCategories.filter(
     (categoryItem) => categoryItem.isMainCategory === true
   );
@@ -10,6 +13,14 @@ export const handleRawCategories = (rawCategories) => {
   let rawThirdLevelCategories = rawCategories.filter(
     (categoryItem) => categoryItem.isThirdLevelCategory === true
   );
+  let specialCategories = [];
+  for (let i = 0; i < rawSpecialCategories.length; i++) {
+    let specialCategoryItem = {
+      rawCategory: rawSpecialCategories[i],
+    };
+    specialCategories.push(specialCategoryItem);
+  }
+
   let mainCategories = [];
   for (let i = 0; i < rawMainCategories.length; i++) {
     let mainCategoryItem = {
@@ -39,7 +50,10 @@ export const handleRawCategories = (rawCategories) => {
     "CategoryScreen -> handleRawCategories -> mainCategories ->",
     mainCategories
   );
-  return mainCategories;
+  return {
+    mainCategories,
+    specialCategories
+  };
 };
 
 

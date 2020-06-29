@@ -1,7 +1,13 @@
 const express = require("express");
 const router = express.Router();
+// Models
+const Picture = require("../../models/Picture");
 const Category = require("../../models/Category");
 // Middleware
+const {
+  fileCheck,
+  resizeFile,
+} = require("../../utils/UploadFile");
 const { check, validationResult } = require("express-validator");
 const authAdminMiddleware = require("../../middleware/authAdmin");
 
@@ -10,20 +16,13 @@ const authAdminMiddleware = require("../../middleware/authAdmin");
 router.post(
   '/',  
   authAdminMiddleware,
-  [
-    check('title', 'Title Should be Text').isString(),
-    check('title', 'Title Text Length should be minimum 2!').isLength({min: 2}),
-  ],
+  fileCheck.single(
+    'image'
+  ),
   async (req, res) => {
-    // Express-validator
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
-    // End of Express-validator
+
     try {
+      const jsonObject = JSON.parse(req.body.jsonText);
       const {
         title,
         isMainCategory,
@@ -32,10 +31,30 @@ router.post(
         isSpecial,
         parentList,
         childrenList,
-      } = req.body;
+        showOnHomePage,
+      } = jsonObject;
       const category = new Category();
       category.title = title;
-      if (!isMainCategory 
+      if( isSpecial ) {
+        category.isSpecial = true;
+        let picture;
+        if( showOnHomePage ) {
+          category.showOnHomePage = true;
+          if (req.file) {
+            picture = new Picture();
+            picture.image = await resizeFile(req.file, 500, 300);
+          } else {
+            return res.status(400).json({
+              errors: [{ msg: "Image doesn't exist!" }],
+            });
+          }
+          await picture.save();
+          category.imageId = picture._id;
+        }
+      }
+      if (
+        !isSpecial
+        && !isMainCategory 
         && !isSecondLevelCategory 
         && !isThirdLevelCategory
       ) {
@@ -44,6 +63,10 @@ router.post(
         });
       } else {
         let counter = 0;
+        if(isSpecial) {
+          category.isSpecial = true;
+          counter++;
+        }
         if(isMainCategory) {
           category.isMainCategory = isMainCategory;
           counter++;
@@ -62,7 +85,20 @@ router.post(
           });
         }
       }
+      
       if ( isMainCategory ) {
+        let picture;
+        if (req.file) {
+          picture = new Picture();
+          picture.image = await resizeFile(req.file, 500, 300);
+        } else {
+          return res.status(400).json({
+            errors: [{ msg: "Image doesn't exist!" }],
+          });
+        }
+        await picture.save();
+        console.log("picture _id ->", picture._id);
+        category.imageId = picture._id;
         category.parentList = [];
       }
       if (isSecondLevelCategory) {
@@ -139,7 +175,7 @@ router.post(
       res.status(500).send("Server Error");
     }
   }
-);
+);  // End of Add a Category
 
 // Get Categories
 router.get(
@@ -159,25 +195,33 @@ router.get(
 );
 
 // Query Categories
-router.get("/query", authAdminMiddleware,  async (req, res) => {
-  try {
-    const searched = req.query.searched;
-    if (!searched) {
-      // Do SMT
-      return res.status(200).json([]);
+router.get(
+  "/query",
+  // authAdminMiddleware,  
+  async (req, res) => {
+    try {
+      const searched = req.query.searched;
+      const showOnlySpecial = req.query.showOnlySpecial;
+      if (!searched) {
+        // Do SMT
+        return res.status(200).json([]);
+      }
+
+      const categoryList = await Category.find({
+        title: {
+          $regex: new RegExp(searched),
+          $options: "i", // case Insensitive
+        },
+        // If you want to fetch special categories, then you will fetch only special categories, if you dont want, then you wont fetch special categories
+        isSpecial: showOnlySpecial ? true : false
+      });
+      res.status(200).json(categoryList);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
     }
-    const categoryList = await Category.find({
-      title: {
-        $regex: new RegExp(searched),
-        $options: "i", // case Insensitive
-      },
-    });
-    res.status(200).json(categoryList);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
   }
-});
+);
 
 
 module.exports = router;

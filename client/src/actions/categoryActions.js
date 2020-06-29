@@ -68,24 +68,60 @@ export const queryCategories = (searched) => async (dispatch) => {
   }
 };
 
+// Query Only Special Categories
+export const querySpecialCategories = (searched) => async (dispatch) => {
+  try {
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    if (searched && searched !== ''  ) {
+      const res = await axios.get(
+        `/api/category/query?searched=${searched}&showOnlySpecial=true`,
+        config
+      );
+      return res.data;
+    } else {
+      return [];
+    }
+  } catch (err) {
+    console.log(err);
+    console.log(err.response);
+    if (err.response.status === 401) {
+      console.log(
+        "categoryActions -> getCategories -> err.response.status === 401"
+      );
+      dispatch(handleTokenFail());
+    }
+  }
+};
+
 
 // Add Category
-export const addCategory = ({formData}) => async dispatch => {
+export const addCategory = ({formData, image, cb}) => async dispatch => {
   const config = {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "multipart/form-data",
     },
   };
   try {
-    const res = await axios.post(`/api/category/`, formData, config);
+    const _formData = new FormData()
+    if(image) {
+      _formData.append("image", image);
+    }
+    _formData.append('jsonText', JSON.stringify(formData)) 
+    const res = await axios.post(`/api/category/`, _formData, config);
     console.log('Client -> actions -> CategoryActions -> addCategory -> response.data ->', res.data );
    dispatch({
      type: CATEGORY_ADDED,
      payload: res.data.category,
    });
+   cb()
   } catch (err) {
     console.log(err)
     console.log(err.response)
+    cb()
     if (err.response.status === 401) {
       console.log(
         "categoryActions -> getCategories -> err.response.status === 401"

@@ -39,6 +39,7 @@ router.post(
     try {
       const product = new Product();
       const jsonObject = JSON.parse(req.body.jsonText);
+      console.log('productRouter -> addProduct -> jsonObject ->', jsonObject);
       const {
         brand,
         productNo,
@@ -49,13 +50,71 @@ router.post(
         mainImageIndex,
         specifications
       } = jsonObject;
+      // If product will have special category & normal category BOTH
+      if (category.length === 2 ) {
+        const categoryOrList = category.map(categoryIdItem =>{
+          return {
+            _id: categoryIdItem
+          }
+        });
+        let categoryDocArray = await Category.find({
+          $or: [
+            ...categoryOrList,
+          ]
+        });
+        if (categoryDocArray.length !== category.length ) {
+          return res.status(400).json({
+            errors: [{ msg: "Invalid Category!" }],
+          });
+        }
+        let specialCategoryIndex = categoryDocArray.findIndex(item => item.isSpecial === true);
+        // If category.length === 2, one of them should be special category
+        if (specialCategoryIndex < 0) {
+          return res.status(400).json({
+            errors: [{ msg: "Invalid Category!" }],
+          });
+        }
+        if ( specialCategoryIndex >= 0 ) {
+          
+          const categoryDoc = categoryDocArray[
+            specialCategoryIndex === 0 ? 1 : 0
+          ];
+          if (
+            categoryDoc.isSecondLevelCategory
+            || categoryDoc.isThirdLevelCategory
+          ) {
+            product.category = [
+              ...category, 
+              ...categoryDoc.parentList,
+            ];            
+          } else {
+            product.category = [
+              ...category
+            ];
+          }
+        }
+      }
+      if(category.length === 1) {
+        const categoryDoc = await Category.findById( category[0] );
+        if( !categoryDoc ) {
+          return res.status(400).json({
+              errors: [{ msg: "Invalid Category!" }],
+            });
+        }
+        if (
+           categoryDoc.isSecondLevelCategory 
+          || categoryDoc.isThirdLevelCategory
+        ) {
+          product.category = [ ...category, ...categoryDoc.parentList ];
+        } else {
+          product.category = [ ...category ];
+        }
+      }
       product.brand = brand;
       product.productNo = productNo;
       product.keyProperties = keyProperties;
       product.price = price;
       product.stockStatus = stockStatus;
-      product.category = category;
-
       console.log('ProductRouter -> addProduct -> specifications -> ',specifications);
       // Check specifications
       if(specifications ) {
@@ -80,7 +139,6 @@ router.post(
         }
       } // End of Check specifications
       product.specifications = specifications;
-
       console.log("mainImageIndex ->", mainImageIndex);
       // Resize, Save to DB, and create List of IMAGES
       const imageList = [];

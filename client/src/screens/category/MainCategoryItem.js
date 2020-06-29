@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import { Button, Collapse, } from 'react-bootstrap'
 import  SubCategoryAddComponent  from './SubCategoryAddComponent';
 import { SubCategoryItem } from './SubCategoryItem';
+import { imageUrlHelper } from '../../helpers/helpers';
 
 
 export const MainCategoryItem = ({
@@ -32,6 +33,19 @@ export const MainCategoryItem = ({
             (showAddSubCategory || showSubCategoryList) && "1px solid white",
         }}
       >
+        {
+          category.rawCategory.imageId && (
+            <img 
+              style={{
+                width: 160,
+                height: 96
+              }}
+              src={imageUrlHelper({
+                imageId: category.rawCategory.imageId
+              })} 
+            />
+          )
+        }
         <div
           className='d-flex'
         >
@@ -49,26 +63,30 @@ export const MainCategoryItem = ({
             display: "flex",
             flexDirection: "row",
           }}
+          // className='bg-warning'
         >
-          <Button
-            aria-expanded={showAddSubCategory}
-            aria-controls={`collapseAddSubItem${_id}`}
-            timeout={1500}
-            onClick={() => {
-              setShowAddSubCategory(!showAddSubCategory);
-            }}
-          >            
-            <div className='d-flex flex-row m-auto'>
-              <span className='mr-2 text-center'>Add Sub Category</span>
-              <i
-                className={
-                  showAddSubCategory
-                    ? "fa fa-chevron-up  text-center m-auto"
-                    : "fa fa-chevron-down text-center m-auto"
-                }
-              ></i>
-            </div>
-          </Button>
+          <div className='my-auto'>
+            <Button
+              aria-expanded={showAddSubCategory}
+              aria-controls={`collapseAddSubItem${_id}`}
+              timeout={1500}
+
+              onClick={() => {
+                setShowAddSubCategory(!showAddSubCategory);
+              }}
+            >            
+              <div className='d-flex flex-row m-auto'>
+                <span className='mr-2 text-center'>Add Sub Category</span>
+                <i
+                  className={
+                    showAddSubCategory
+                      ? "fa fa-chevron-up  text-center m-auto"
+                      : "fa fa-chevron-down text-center m-auto"
+                  }
+                ></i>
+              </div>
+            </Button>
+          </div>
           <div
             style={{
               width: "2.5rem",

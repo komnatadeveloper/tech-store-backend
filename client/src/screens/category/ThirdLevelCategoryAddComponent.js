@@ -36,6 +36,10 @@ const ThirdLevelCategoryAddComponent = ({
                 isThirdLevelCategory: true,
                 parentList: [parentCategory.rawCategory._id],
               },
+              image: null,
+              cb: () => {
+                console.log('ThirdLevelCategoryAddComponent -> addCategory -> callback FIRED');
+              }
             });
           }}
         >

@@ -48,6 +48,10 @@ const SubCategoryAddComponent = ({
                 isSecondLevelCategory: true,
                 parentList: [parentCategory.rawCategory._id],
               },
+              image: null,
+              cb: () => {
+                console.log('SubCategoryAddComponent -> addCategory -> callback FIRED');
+              }
             });
           }}
         >

@@ -51,7 +51,7 @@ const ProductSchema = new Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
     },
-  ],
+  ],  
 });
 
 const Product = mongoose.model("product", ProductSchema);
