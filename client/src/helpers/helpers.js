@@ -67,5 +67,10 @@ export const mainImageUrlHelper =  ({ imageList }) => {
   )[0].imageId
   return '/api/product/images/' + mainImageId;
 }
+export const mainImageIdHelper =  ({ imageList }) => {
+  return  imageList.filter(
+    imageItem => imageItem.isMain === true
+  )[0].imageId
+}
 
 

@@ -14,6 +14,8 @@ import {
   AddProductScreen,
   NotFound,
   FeaturedScreen,
+  AddSupplierScreen,
+  AddIncomingInvoiceScreen,
 } from './screens'
 
 // Redux
@@ -46,6 +48,8 @@ function App() {
           <Route exact path='/product' component={ProductScreen} />
           <Route exact path='/add-product' component={AddProductScreen} />
           <Route exact path='/featured' component={FeaturedScreen} />
+          <Route exact path='/add-supplier' component={AddSupplierScreen} />
+          <Route exact path='/add-incoming-invoice' component={AddIncomingInvoiceScreen} />
           <Route component={NotFound} />
         </Switch>
       </Router>

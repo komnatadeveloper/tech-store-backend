@@ -23,6 +23,8 @@ const AppNavbar = ({history, location,  isAuthenticated, appInitialised, logout 
                 <Nav.Link href='/product'>Products</Nav.Link>
                 <Nav.Link href='/add-product'>Add Product</Nav.Link>
                 <Nav.Link href='/featured'>Featured</Nav.Link>
+                <Nav.Link href='/add-supplier'>Add Supplier</Nav.Link>
+                <Nav.Link href='/add-incoming-invoice'>Add Incoming Invoice</Nav.Link>
                 <Nav.Link
                   onClick={() => {
                     logout();

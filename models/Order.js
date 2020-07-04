@@ -7,6 +7,14 @@ const OrderSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Customer",
   },
+  supplierId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Supplier",
+  },
+  type: {
+    type: String, // 'procurement' || 'sell'
+    required: true
+  },
   items: [
     {
       productId: {

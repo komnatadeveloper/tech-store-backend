@@ -4,6 +4,8 @@ import  ProductScreen  from "./product/ProductScreen";
 import  AddProductScreen  from "./add-product/AddProductScreen";
 import NotFound from "./404/NotFound";
 import  FeaturedScreen  from "./featured/FeaturedScreen";
+import AddSupplierScreen from "./add-supplier/AddSupplierScreen";
+import AddIncomingInvoiceScreen from "./add-incoming-invoice/AddIncomingInvoiceScreen";
 
 
 
@@ -15,5 +17,7 @@ export {
   ProductScreen,
   AddProductScreen,
   NotFound,
-  FeaturedScreen
+  FeaturedScreen,
+  AddSupplierScreen,
+  AddIncomingInvoiceScreen
 };
