@@ -2,12 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
 import { connect } from "react-redux";
+// actions
 import { querySuppliers } from "../../actions/supplierActions";
 import { queryProducts } from "../../actions/productActions";
+import { addOrder } from "../../actions/orderActions";
+// Components
 import { ProductItemComponent } from './ProductItemComponent'
+import { ProductItemInOrderList } from "./ProductItemInOrderList";
 // helpers
 import { mainImageIdHelper } from "../../helpers/helpers";
-import { ProductItemInOrderList } from "./ProductItemInOrderList";
+
+  
 
 
 
@@ -19,6 +24,7 @@ const AddIncomingInvoiceScreen = ({
   // from actions
   querySuppliers,
   queryProducts,
+  addOrder
 }) => {
 
   const initialFormData = {
@@ -31,10 +37,6 @@ const AddIncomingInvoiceScreen = ({
   const [formData, setFormData] = useState(initialFormData);
   const {
     supplierId,
-    email,
-    name,
-    middleName,
-    surName,
     orderTotalPrice,
     address,
     items,
@@ -357,8 +359,12 @@ const AddIncomingInvoiceScreen = ({
             )
 
         } */}
+        <div className='d-flex flex-row'>
+          <p className='mr-2 ' >Address:</p>
+          <p className='font-weight-bold ' >{address}</p>
+        </div>
         
-        <Form.Group controlId='formBasicEmail'>
+        {/* <Form.Group controlId='formBasicEmail'>
           <Form.Label>Address</Form.Label>
           <Form.Control
             type='text'
@@ -367,7 +373,7 @@ const AddIncomingInvoiceScreen = ({
             value={address}
             onChange={(e) => onChange(e)}
           />
-        </Form.Group>
+        </Form.Group> */}
 
 
       </Form>
@@ -383,11 +389,22 @@ const AddIncomingInvoiceScreen = ({
         className='w-100 mt-5'
         onClick={(e) => {
           e.preventDefault();
-          console.log("Client -> AddProductScreen -> formData ->", formData);
+          console.log("Client -> AddIncomingInvoiceScreen -> formData ->", formData);
+          addOrder({
+            formData,
+            callBack: () => {
+              console.log('Client -> AddIncomingInvoiceScreen -> addOrder -> callBack FIRED');
+              setFormData(initialFormData);
+              setSupplierTitle('');
+              setSearch('');
+              setSearchProduct('');
+              setSuppliers([]);
+            }
+          })
 
         }}
       >
-        Add Product
+        Add Invoice
         </Button>
     </div>
   )
@@ -406,6 +423,7 @@ export default connect(
   {
 
     querySuppliers,
-    queryProducts
+    queryProducts,
+    addOrder
   }
 )(AddIncomingInvoiceScreen);
