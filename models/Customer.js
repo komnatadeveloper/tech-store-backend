@@ -38,9 +38,25 @@ const UserSchema = new Schema({
   tel2: {
     type: String,
   },
-  address: {
-    type: String,
-  },
+  addressList: [
+    {
+      definition: {
+        type: String,
+      },
+      receiver: {
+        type: String,
+      },
+      addressString: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      isMain: {
+        type: Boolean
+      }
+    }
+  ], 
   balance: {
     type: Number, // Minus if user should pay, Plus if user has paid more than necessary
     default: 0.00
