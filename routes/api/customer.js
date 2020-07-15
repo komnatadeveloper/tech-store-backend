@@ -13,6 +13,9 @@ const Order = require("../../models/Order");
 const { check, validationResult } = require("express-validator");
 // const authAdminMiddleware = require("../../middleware/authAdmin");
 const authCustomerMiddleware = require("../../middleware/authCustomer");
+// Credit Card Payment
+const { getPayment } = require("../../utils/CreditCardPayment");
+
 
 // Sign Up
 router.post(
@@ -311,8 +314,8 @@ router.post(
   authCustomerMiddleware,
   [  // Express Validator
     check("type", "Please select order Type!").isString(),
-    check("address", "Please enter your address").isString(),
-    check("address", "Please enter your address").notEmpty(),
+    // check("address", "Please enter your address").isString(),
+    // check("address", "Please enter your address").notEmpty(),
     check("orderTotalPrice", "Please give information about Order Total Price!").isNumeric(),
     check("items", "Please include items list").isArray({
       min: 1
@@ -334,14 +337,13 @@ router.post(
         cardNumber,
         cvvCode,
         expiryDate, 
+        cardHolder,
       } = req.body;
       console.log('customerRouter -> addOrder -> cardNumer + cvvCode + expiryDate ->', cardNumber, '+', cvvCode, '+', expiryDate );
-      let i = 5;
-      if ( (i * 2) > 0 ) {
-        return res.status(200).json({
-          msg: 'This is a test of this endpoint!',
-        });
-      }
+      console.log('address -> ', address);
+      console.log('items -> ', items);
+      console.log('orderTotalPrice ->', orderTotalPrice);
+      
       const order = new Order();
       if (
         type !== 'sell'
@@ -354,7 +356,7 @@ router.post(
       const customer = await Customer.findById(req.customerId);
       if (!customer) {
         return res.status(404).json({ msg: 'User does not exist!' });
-      }      
+      }        
       order.customerId = req.customerId;
       order.address = address;
       const productOrList = items.map(
@@ -416,13 +418,30 @@ router.post(
         );
         orderSumCheckVariable += items[i].quantity * parseFloat(items[i].price.toFixed(2));
       }
+      orderSumCheckVariable = parseFloat(orderSumCheckVariable.toFixed(2));
       if (orderSumCheckVariable !== orderTotalPrice) {
+        console.log('orderSumCheckVariable & orderTotalPrice ->', orderSumCheckVariable.toString(), '+', orderTotalPrice.toString() );
         return res.status(400).json({
           errors: [{ msg: "Order Total Price does not match with Order List!" }],
         });
       }
       // Now save Products new quantities
       if (type === 'sell') {
+        // Get Payment        
+        const getPaymentResult = await getPayment({
+          cardHolder,
+          cardNumber,
+          cvvCode,
+          expiryDate,
+        });        
+        if (getPaymentResult.status === false) {
+          return res.status(400).json({
+            errors: [{ msg: getPaymentResult.msg }],
+          });
+        }
+        customer.balance = customer.balance + orderTotalPrice;
+        await customer.save();  // We have already got Credit Card Payment!
+        // End of Get Payment 
         order.items = confirmedItemsList;
         order.orderTotalPrice = orderTotalPrice;
         order.address = address;
@@ -454,11 +473,10 @@ router.post(
           msg: "Order has been added successfully",
           order,
         });
-      }
-
-      
+      }      
     } catch (err) {
-      
+      console.error(err.message);
+      res.status(500).send("Server Error");
     }
   }
 );

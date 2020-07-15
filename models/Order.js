@@ -47,7 +47,18 @@ const OrderSchema = new Schema({
     default: Date.now,
   },
   address: {
-    type: String
+    definition: {
+      type: String      
+    },
+    receiver: {
+      type: String
+    },
+    addressString: {
+      type: String
+    },
+    city: {
+      type: String,
+    },
   },
   orderTotalPrice: {
     type: Number,

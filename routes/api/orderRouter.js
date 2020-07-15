@@ -112,7 +112,9 @@ router.post(
         order.supplierId = supplierId;
         order.items = items;
         order.orderTotalPrice = orderTotalPrice;
-        order.address = address;
+        order.address = {
+          addressString: supplier.address
+        };
         await order.save();
         for (let i = 0; i < items.length; i++) {
           console.log('items ->', items);
