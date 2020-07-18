@@ -125,7 +125,7 @@ router.post(
               isSpecificationsOk = false;
             } else if (typeof (item.key) !== 'string' || typeof (item.value) !== 'string' ) {
               isSpecificationsOk = false;
-            } else if (item.key.length < 2 || item.value.length < 2) {
+            } else if (item.key.length < 2 || item.value.length < 1) {
               isSpecificationsOk = false;
             }
           })
@@ -153,6 +153,12 @@ router.post(
             isMain: mainImageIndex === i ? true : false,
           });
         }
+      } else {
+        return res
+          .status(400)
+          .json({
+            errors: [{ msg: "No Pictures. Please Add Pictures when Adding a Product!" }],
+          });
       }
       console.log("imageList ->", imageList);
       product.imageList = imageList;

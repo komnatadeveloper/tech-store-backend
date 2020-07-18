@@ -8,6 +8,7 @@ const Customer = require("../../models/Customer");
 const Product = require("../../models/Product");
 const Category = require("../../models/Category");
 const Order = require("../../models/Order");
+const Feature = require("../../models/Feature");
 
 // Middleware
 const { check, validationResult } = require("express-validator");
@@ -218,7 +219,30 @@ router.post(
       res.status(500).send('Server Error')
     }
   }
-); // End of  Add Product to favorites
+); // End of  Add Address
+
+// Get Features
+router.get(
+  "/feature",
+  authCustomerMiddleware,
+  async (req, res) => {
+    console.log('customerRouter -> getFeatures -> customerId ->', req.customerId);
+    try {
+      const customer = await Customer.findById(req.customerId);
+      if (!customer) {
+        return res.status(404).json({ msg: 'User does not exist!' });
+      }
+      const featureList = await Feature.find({});
+      console.log('customerRouter -> getFeatures -> featureList ->', featureList);
+      res.status(200).json(
+        featureList,
+      );
+    } catch (err) {
+      console.error(err.message)
+      res.status(500).send('Server Error')
+    }
+  }
+);  // End of Get Features
 
 
 
@@ -234,7 +258,6 @@ router.post(
       if (!customer) {
         return res.status(404).json({ msg: 'User does not exist!' });
       }
-
       const productQuery = req.body.productList.map( productId => (
         { _id: productId }
       ))
@@ -247,12 +270,10 @@ router.post(
       res.status(200).json(
         productListFromDB,
       );
-
     } catch (err) {
       console.error(err.message)
       res.status(500).send('Server Error')
     }
-
   }
 );
 
@@ -297,6 +318,49 @@ router.post(
         ]
       });
 
+      return res.status(200).json(
+        productList
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+// Get Products
+router.get(
+  "/product/get",
+  authCustomerMiddleware,
+  async (req, res) => {
+    let orList = [];
+    const productId = req.query.productId;
+    if( productId ) {
+      orList.push(
+        { _id: productId }
+      );
+    }
+    console.log('customerRouter -> Get Products -> productId ->', productId);
+    const categoryId = req.query.categoryId;
+    if (categoryId) {
+      orList.push(
+        { category: categoryId }
+      );
+    }
+    console.log('customerRouter -> Get Products -> categoryId ->', categoryId);
+    const brand = req.query.brand;
+    if (brand) {
+      orList.push(
+        { brand }
+      );
+    }
+    console.log('customerRouter -> Get Products -> brand ->', brand);    
+    try {
+      const productList = await Product.find({
+        $or: [
+          ...orList
+        ]
+      });
       return res.status(200).json(
         productList
       );
