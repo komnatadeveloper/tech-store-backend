@@ -10,6 +10,7 @@ const customerRouter = require('./routes/api/customer');
 const featureRouter = require('./routes/api/feature');
 const supplierRouter = require('./routes/api/supplierRouter');
 const orderRouter = require('./routes/api/orderRouter');
+const statisticRouter = require('./routes/api/statisticRouter');
 
 
 
@@ -30,6 +31,7 @@ app.use("/api/customer", customerRouter);
 app.use("/api/feature", featureRouter);
 app.use("/api/supplier", supplierRouter);
 app.use("/api/order", orderRouter);
+app.use("/api/statistic", statisticRouter);
 
 // WE ARE COMMENTING TO BE ABLE TO UPLOAD TO HEROKU
 app.get('/', (req, res) => {

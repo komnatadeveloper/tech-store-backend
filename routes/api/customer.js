@@ -119,6 +119,68 @@ router.post(
       if (!isMatch) {
         return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] })
       }
+      console.log('test0', customer);
+      if ( 
+        !customer.specialPriceItems 
+        || customer.specialPriceItems.length === 0
+      ) {
+        console.log('test1');
+        let allProducts = await Product.find({});
+        let productCount = allProducts.length;
+        if( productCount === 0 ) {
+          // nothing to do
+          customer.specialPriceItems = [];
+        } else if( productCount === 1 ) {
+          customer.specialPriceItems = [{
+            productId: allProducts[0]._id,
+            price: parseFloat(
+              (allProducts[0].price * 0.90).toFixed(2)
+            ) 
+          }]
+        } else if (productCount === 2) {
+          customer.specialPriceItems = 
+          [
+            {
+              productId: allProducts[0]._id,
+              price: parseFloat(
+                (allProducts[0].price * 0.90).toFixed(2)
+              )
+            },
+            {
+              productId: allProducts[1]._id,
+              price: parseFloat(
+                (allProducts[1].price * 0.90).toFixed(2)
+              )
+            },
+          ]
+        } else {
+          let indexList = [];
+          while( indexList.length < 2 ) {
+            let randomIndex = Math.round(
+              Math.random() * (productCount-1)
+            );
+            if ( 
+              randomIndex < productCount 
+              && indexList.indexOf(randomIndex) <= 0
+            ) {
+              indexList.push(randomIndex);
+            }
+          } // end of while loop
+          customer.specialPriceItems = [];
+          for( let i = 0; i< indexList.length; i++ ) {
+            customer.specialPriceItems.push(
+              {
+                productId: allProducts[i]._id,
+                price: parseFloat(
+                  (allProducts[i].price * 0.90).toFixed(2)
+                )
+              },
+            )
+          }
+          console.log('customerRouter -> signin -> customer ->', customer);
+        }
+        await customer.save();
+      }
       // delete password before sending customer info
       customer.password = undefined;
       // Return jsonwebtoken
@@ -538,6 +600,97 @@ router.post(
           order,
         });
       }      
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+
+// Get Statistics
+router.get(
+  "/statistic",
+  authCustomerMiddleware,
+  async (req, res) => {
+    console.log(req.query.type)
+    console.log('customerRouter -> GetStatistic -> Type ->', req.query.type)
+    try {
+      const type = req.query.type;  // "sellStatistic" "topSellStatistic"   "allStatistics" 
+      let orderAggregation;
+      if (
+        type !== "sellStatistic"
+        && type !== "topSellStatistic"
+        && type !== "allStatistics"
+      ) {
+        return res.status(400).json({
+          errors: [{ msg: "Type Not Selected!" }],
+        });
+      }
+      if (type === "topSellStatistic") {
+        orderAggregation = await Order.aggregate([
+          {
+            $match: {
+              type: 'sell'
+            }
+          },
+          {
+            $unwind: '$items'
+          },
+          {
+            $group: {
+              _id: '$items.productId',
+              totalSellQuantity: {
+                $sum: '$items.quantity'
+              }
+            }
+          },
+          {
+            $sort: {
+              totalSellQuantity: -1
+            }
+          }
+        ])
+        // return res.status(200).json(
+        //   orderAggregation
+        // );
+      } else {
+        orderAggregation = []; // to be updated in Future
+      }
+      if (req.query.populateProducts === 'yes') {
+        let queryOrList = [];
+        let maxCount = req.query.maxCount
+          ? parseInt(req.query.maxCount.toString())
+          : 15;
+        maxCount = maxCount > orderAggregation.length
+          ? orderAggregation.length
+          : maxCount;
+        for (let i = 0; i < maxCount; i++) {
+          queryOrList.push(
+            {
+              _id: orderAggregation[i]._id
+            }
+          )
+        }
+        const productList = await Product.find({
+          $or: [
+            ...queryOrList
+          ]
+        });
+        let responseList = [];
+        if (maxCount === productList.length) {
+          for (let i = 0; i < maxCount; i++) {
+            responseList.push(
+              productList.find(
+                item => item.id.toString() === orderAggregation[i]._id.toString()
+              )
+            );
+          }
+          return res.status(200).json(
+            responseList
+          );
+        }
+      }
     } catch (err) {
       console.error(err.message);
       res.status(500).send("Server Error");

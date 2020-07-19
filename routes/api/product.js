@@ -316,7 +316,7 @@ router.get(
   async (req, res) => {
     try {
       const picture = await Picture.findById(req.params.imageId);
-      console.log('ProductRouter -> get Image-> picture.id ->', picture)
+      // console.log('ProductRouter -> get Image-> picture.id ->', picture)
       res.set('Content-Type', 'image/jpeg')
       res.send(picture.image)
     } catch (err) {

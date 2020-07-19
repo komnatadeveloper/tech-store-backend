@@ -74,6 +74,15 @@ const UserSchema = new Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
     },
+  ],
+  specialPriceItems: [
+    {
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+      price: Number
+    }
   ]
 });
 
