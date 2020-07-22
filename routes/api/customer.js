@@ -61,15 +61,17 @@ router.post(
           id: customer._id.toString(),
         },
       };
+      // delete password before sending customer info
+      customer.password = undefined;
       jwt.sign(
         payload,
         config.get("jwtSecret"),
         { expiresIn: 360000 },
         (err, token) => {
-          if (err) throw err;
+          if (err) throw err;          
           res.status(200).json({
             token,
-            userId : customer._id 
+            customer
           });
         }
       );
@@ -119,7 +121,6 @@ router.post(
       if (!isMatch) {
         return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] })
       }
-      console.log('test0', customer);
       if ( 
         !customer.specialPriceItems 
         || customer.specialPriceItems.length === 0
@@ -605,7 +606,65 @@ router.post(
       res.status(500).send("Server Error");
     }
   }
-);
+);  //   End of Add Order
+
+
+// Get Orders
+router.get(
+  "/order/get",
+  authCustomerMiddleware,
+  async (req, res) => {
+    console.log('customerRouter -> getOrders -> ');    
+    try {    
+      const customerId = req.customerId;  
+      if ( !customerId  ) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] })
+      }
+      const customer = await Customer.findById(customerId);
+      if (!customer) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] })
+      }
+      const date = req.query.date;  //  "today" || "1week" || "1month"  || "3months"
+      if(
+        date !== "today" 
+        && date !== "1week" 
+        &&  date !== "1month" 
+        && date !== "3months"
+      ) {
+        return res.status(400).json({ errors: [{ msg: 'Date Range not selected!' }] })
+      }
+      let d = new Date();
+      switch (date) {
+        case "today":
+          d.setDate(d.getDate() - 1);
+          break;
+        case "1week":
+          d.setDate(d.getDate() - 7);
+          break;
+        case "1month":
+          d.setMonth(d.getMonth() - 1);
+          break;
+        case "3months":
+          d.setMonth(d.getMonth() - 3);
+          break;
+      }
+      d.setDate(d.getDate()-1);
+      const orders = await Order.find({
+        customerId,
+        date: {
+          $gte: d
+        }
+      });
+      res.status(200).send(
+        orders
+      );
+
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);  //   End of Add Order
 
 
 // Get Statistics
@@ -678,7 +737,7 @@ router.get(
           ]
         });
         let responseList = [];
-        if (maxCount === productList.length) {
+        if (maxCount === productList.length) {          
           for (let i = 0; i < maxCount; i++) {
             responseList.push(
               productList.find(
@@ -686,6 +745,7 @@ router.get(
               )
             );
           }
+          console.log('customerRouter -> GetStatistic -> responseList ->', responseList);
           return res.status(200).json(
             responseList
           );
