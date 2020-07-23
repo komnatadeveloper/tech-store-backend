@@ -9,10 +9,9 @@ const Product = require("../../models/Product");
 const Category = require("../../models/Category");
 const Order = require("../../models/Order");
 const Feature = require("../../models/Feature");
-
+const Supplier = require("../../models/Supplier");
 // Middleware
 const { check, validationResult } = require("express-validator");
-// const authAdminMiddleware = require("../../middleware/authAdmin");
 const authCustomerMiddleware = require("../../middleware/authCustomer");
 // Credit Card Payment
 const { getPayment } = require("../../utils/CreditCardPayment");
@@ -54,6 +53,63 @@ router.post(
       // Encrypt password
       const salt = await bcrypt.genSalt(10);
       customer.password = await bcrypt.hash(req.body.password, salt);
+      let allProducts = await Product.find({});
+      let productCount = allProducts.length;
+      if (productCount === 0) {
+        // nothing to do
+        customer.specialPriceItems = [];
+      } else if (productCount === 1) {
+        customer.specialPriceItems = [{
+          productId: allProducts[0]._id,
+          price: parseFloat(
+            (allProducts[0].price * 0.90).toFixed(2)
+          )
+        }]
+      } else if (productCount === 2) {
+        customer.specialPriceItems =
+          [
+            {
+              productId: allProducts[0]._id,
+              price: parseFloat(
+                (allProducts[0].price * 0.90).toFixed(2)
+              )
+            },
+            {
+              productId: allProducts[1]._id,
+              price: parseFloat(
+                (allProducts[1].price * 0.90).toFixed(2)
+              )
+            },
+          ]
+      } else {
+        let indexList = [];
+        while (indexList.length < 2) {
+          let randomIndex = Math.round(
+            Math.random() * (productCount - 1)
+          );
+          if (
+            randomIndex < productCount
+            && indexList.indexOf(randomIndex) <= 0
+          ) {
+            indexList.push(randomIndex);
+          }
+        } // end of while loop
+        customer.specialPriceItems = [];
+        for (let i = 0; i < indexList.length; i++) {
+          customer.specialPriceItems.push(
+            {
+              productId: allProducts[
+                indexList[i]
+              ]._id,
+              price: parseFloat(
+                (allProducts[
+                  indexList[i]
+                ].price * 0.90).toFixed(2)
+              )
+            },
+          )
+        }
+      }
       await customer.save();
       // Return jsonwebtoken
       const payload = {
@@ -75,13 +131,7 @@ router.post(
           });
         }
       );
-
-
-      // res.status(200).json({
-      //   msg: "Your account is added succesfully",
-      //   // category,
-      // });
-        } catch (err) {
+    } catch (err) {
       console.error(err.message);
       res.status(500).send("Server Error");
     }
@@ -108,7 +158,6 @@ router.post(
         errors: errors.array(),
       });
     }
-
     try {
       const { email, password } = req.body;
       // Check if customer exists
@@ -130,8 +179,10 @@ router.post(
         let productCount = allProducts.length;
         if( productCount === 0 ) {
           // nothing to do
+          console.log('test2');
           customer.specialPriceItems = [];
         } else if( productCount === 1 ) {
+          console.log('test3');
           customer.specialPriceItems = [{
             productId: allProducts[0]._id,
             price: parseFloat(
@@ -139,6 +190,7 @@ router.post(
             ) 
           }]
         } else if (productCount === 2) {
+          console.log('test3');
           customer.specialPriceItems = 
           [
             {
@@ -155,11 +207,14 @@ router.post(
             },
           ]
         } else {
+          console.log('test4');
           let indexList = [];
           while( indexList.length < 2 ) {
+            console.log('productCount ->', productCount);
             let randomIndex = Math.round(
               Math.random() * (productCount-1)
             );
+            console.log('randomIndex ->', randomIndex);
             if ( 
               randomIndex < productCount 
               && indexList.indexOf(randomIndex) <= 0
@@ -169,11 +224,16 @@ router.post(
           } // end of while loop
           customer.specialPriceItems = [];
           for( let i = 0; i< indexList.length; i++ ) {
+            console.log('indexList[i] ->', indexList[i]);
             customer.specialPriceItems.push(
               {
-                productId: allProducts[i]._id,
+                productId: allProducts[
+                  indexList[i]
+                ]._id,
                 price: parseFloat(
-                  (allProducts[i].price * 0.90).toFixed(2)
+                  (allProducts[
+                    indexList[i]
+                  ].price * 0.90).toFixed(2)
                 )
               },
             )
@@ -208,6 +268,7 @@ router.post(
     }
   }
 );
+
 
 // Add Product to favorites
 router.post(
@@ -245,6 +306,7 @@ router.post(
     }
   }
 ); // End of  Add Product to favorites
+
 
 // Add Address
 router.post(
@@ -284,6 +346,25 @@ router.post(
   }
 ); // End of  Add Address
 
+
+// Get Categories
+router.get(
+  "/categories",
+  authCustomerMiddleware,
+  async (req, res) => {
+    try {
+      const categories = await Category.find({});
+      res.status(200).json(
+        categories,
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+
 // Get Features
 router.get(
   "/feature",
@@ -306,6 +387,45 @@ router.get(
     }
   }
 );  // End of Get Features
+
+
+// Get Products by Category ID
+router.get(
+  "/productByCategory",
+  authCustomerMiddleware,
+  async (req, res) => {
+    console.log(req.query.categoryId)
+    console.log('Product Search by Category ID -> Category Id ->', req.query.categoryId)
+    try {
+      const productList = await Product.find({
+        category: req.query.categoryId
+      });
+      console.log('Product Search by Category ID -> req.query.brandList->', req.query.brandList)
+      // İf Admin-Dashboard wants to see brandList to filter
+      if (req.query.brandList === '1' && req.query.onlyFilterList === '1') {
+        console.log('Product Search by Category ID -> request for brandList ->')
+        let brandList = [];
+        for (let i = 0; i < productList.length; i++) {
+          let index = brandList.indexOf(productList[i].brand)
+          if (index < 0) {
+            brandList.push(productList[i].brand);
+          }
+        }
+        console.log('Product Search by Category ID -> brandList ->', brandList);
+        return res.status(200).json({
+          brandList
+        });
+      }
+      console.log("Product Search by Category ID -> Product Count ->", productList.length);
+      res.status(200).json(
+        productList
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);  // End of Get Products by Category ID
 
 
 
@@ -339,6 +459,7 @@ router.post(
     }
   }
 );
+
 
 // Query Products
 router.post(
@@ -441,8 +562,6 @@ router.post(
   authCustomerMiddleware,
   [  // Express Validator
     check("type", "Please select order Type!").isString(),
-    // check("address", "Please enter your address").isString(),
-    // check("address", "Please enter your address").notEmpty(),
     check("orderTotalPrice", "Please give information about Order Total Price!").isNumeric(),
     check("items", "Please include items list").isArray({
       min: 1
@@ -530,7 +649,13 @@ router.post(
             errors: [{ msg: `Quantity of Product with ID ${relatedProduct._id} is less than ${items[i].quantity}!` }],
           });
         }
-        confirmedItemsList.push(
+        let relatedCustomerSpecialPriceItem = customer.specialPriceItems.find(
+          element => element.productId.toString() === relatedProduct._id.toString()
+        );
+        let price = relatedCustomerSpecialPriceItem
+          ? relatedCustomerSpecialPriceItem.price
+          : relatedProduct.price;
+        confirmedItemsList.push(          
           {
             productId: relatedProduct._id,
             brand: relatedProduct.brand,
@@ -539,11 +664,15 @@ router.post(
             mainImageId: relatedProduct.imageList.filter(
               image => image.isMain === true
             )[0].imageId,
-            price: relatedProduct.price,
+            // price: relatedProduct.price,
+            price,
             quantity: items[i].quantity,
           }
         );
-        orderSumCheckVariable += items[i].quantity * parseFloat(items[i].price.toFixed(2));
+        orderSumCheckVariable += items[i].quantity * parseFloat(
+          // items[i].price.toFixed(2)
+          price.toFixed(2)
+        );
       }
       orderSumCheckVariable = parseFloat(orderSumCheckVariable.toFixed(2));
       if (orderSumCheckVariable !== orderTotalPrice) {
@@ -573,6 +702,9 @@ router.post(
         order.orderTotalPrice = orderTotalPrice;
         order.address = address;
         await order.save();
+        //----------------------------------------------------------------------------------------
+        let autoOrderItemsList = [];
+        //----------------------------------------------------------------------------------------
         for (let i = 0; i < items.length; i++) {
           console.log('items ->', items);
           let relatedProduct = productList.find(item => item.id === items[i].productId);
@@ -585,6 +717,9 @@ router.post(
           }
           relatedProduct.stockStatus = stockStatus;
           await relatedProduct.save();
+          if( relatedProduct.stockStatus.stockQuantity < 3 ) {
+            autoOrderItemsList.push(relatedProduct);
+          }
         }
         customer.balance = customer.balance - orderTotalPrice;
         if ( !customer.orders ) {
@@ -596,6 +731,55 @@ router.post(
           }
         );
         await customer.save();
+        //----------------------------------------------------------------------------------------
+        // Auto Add Products To Store
+        if (autoOrderItemsList.length > 0 ) {
+          let autoSupplyOrder = new Order();
+          autoSupplyOrder.address = {
+            addressString: 'This is an autoOrder Address'
+          };
+          let suppliers = await Supplier.find({});
+          autoSupplyOrder.supplierId = suppliers[0]._id;
+          autoSupplyOrder.type = 'procurement';
+          autoSupplyOrder.items = [];
+          let autoOrderTotalPrice = 0;
+          for (let i = 0; i < autoOrderItemsList.length; i++ ) {
+            // A number between 4 and 49
+            let randomOrderQuantity = Math.round(
+              Math.random() * (45)
+            ) + 4;
+            let relatedAutoOrderProduct = autoOrderItemsList[i];
+            relatedAutoOrderProduct.stockStatus = {
+              ...relatedAutoOrderProduct.stockStatus,
+              stockQuantity: relatedAutoOrderProduct.stockStatus.stockQuantity + randomOrderQuantity
+            };
+            await relatedAutoOrderProduct.save();
+            autoSupplyOrder.items.push({
+              productId: relatedAutoOrderProduct._id,
+              brand: relatedAutoOrderProduct.brand,
+              productNo: relatedAutoOrderProduct.productNo,
+              keyProperties: relatedAutoOrderProduct.keyProperties,
+              mainImageId: relatedAutoOrderProduct.imageList.filter(
+                image => image.isMain === true
+              )[0].imageId,
+              price: parseFloat(
+                (relatedAutoOrderProduct.price * 0.7).toFixed(2)
+              ),
+              quantity: randomOrderQuantity
+            });
+            autoOrderTotalPrice += parseFloat(
+              (
+                randomOrderQuantity * relatedAutoOrderProduct.price * 0.7
+              ).toFixed(2)
+            );  
+          }
+          autoSupplyOrder.orderTotalPrice = autoOrderTotalPrice;
+          await autoSupplyOrder.save();
+          let relatedSupplier = suppliers[0];
+          relatedSupplier.balance = relatedSupplier.balance + autoOrderTotalPrice;
+          await relatedSupplier.save();  
+        }
+        //----------------------------------------------------------------------------------------
         return res.status(200).json({
           msg: "Order has been added successfully",
           order,
@@ -655,8 +839,9 @@ router.get(
           $gte: d
         }
       });
+      const reverseOrders = orders.reverse();
       res.status(200).send(
-        orders
+        reverseOrders
       );
 
     } catch (err) {

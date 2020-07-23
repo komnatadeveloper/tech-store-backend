@@ -4,10 +4,10 @@ const path = require("path");
 
 // Routers
 const categoryRouter = require('./routes/api/categoryRouter');
-const productRouter = require('./routes/api/product');
+const productRouter = require('./routes/api/productRouter');
 const adminAuthRouter = require('./routes/api/adminAuth');
-const customerRouter = require('./routes/api/customer');
-const featureRouter = require('./routes/api/feature');
+const customerRouter = require('./routes/api/customerRouter');
+const featureRouter = require('./routes/api/featureRouter');
 const supplierRouter = require('./routes/api/supplierRouter');
 const orderRouter = require('./routes/api/orderRouter');
 const statisticRouter = require('./routes/api/statisticRouter');

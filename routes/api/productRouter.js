@@ -13,7 +13,11 @@ const authAdminMiddleware = require("../../middleware/authAdmin");
 
 
 // Add a Picture
-router.post("/add-image/", authAdminMiddleware, fileCheck.single("image"), async (req, res) => {
+router.post(
+  "/add-image/", 
+  authAdminMiddleware, 
+  fileCheck.single("image"), 
+  async (req, res) => {
   try {
     const picture = new Picture();
     picture.image = await resizeFile(req.file, 500, 500);   
@@ -221,6 +225,7 @@ router.delete(
 // Get Products
 router.get(
   "/product",
+  authAdminMiddleware,
   async (req, res) => {
     console.log(req.query.categoryId)
     console.log('Product Search by Category ID -> Category Id ->', req.query.categoryId)
@@ -259,6 +264,7 @@ router.get(
 // Query Products
 router.post(
   "/query",
+  authAdminMiddleware,
   async (req, res) => {
     const search = req.query.search;
     console.log('productRouter -> Query Products -> query Text ->', search);
@@ -313,6 +319,7 @@ router.post(
 // Get Single Image
 router.get( 
   '/images/:imageId',
+  // authAdminMiddleware,
   async (req, res) => {
     try {
       const picture = await Picture.findById(req.params.imageId);

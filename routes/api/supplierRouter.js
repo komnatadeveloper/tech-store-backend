@@ -2,12 +2,7 @@ const express = require("express");
 const router = express.Router();
 // Models
 const Supplier = require("../../models/Supplier");
-
 // Middleware
-const {
-  fileCheck,
-  resizeFile,
-} = require("../../utils/UploadFile");
 const { check, validationResult } = require("express-validator");
 const authAdminMiddleware = require("../../middleware/authAdmin");
 

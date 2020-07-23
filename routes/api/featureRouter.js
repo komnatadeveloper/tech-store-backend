@@ -16,7 +16,7 @@ const authAdminMiddleware = require("../../middleware/authAdmin");
 // Add a Feature
 router.post(
   "/feature/",
-  // authAdminMiddleware,
+  authAdminMiddleware,
   fileCheck.single(
     'image'
   ),
@@ -133,6 +133,7 @@ router.post(
 // Get Features
 router.get(
   "/feature/",
+  authAdminMiddleware,
   async (req, res) => {
     // console.log(req.query.categoryId)
     console.log('featureRouter -> fetchFeatures FIRED ->')
@@ -159,6 +160,7 @@ router.get(
 // Delete Feature
 router.delete(
   "/feature/:featureId",
+  authAdminMiddleware,
   async (req, res) => {
     // console.log(req.query.categoryId)
     console.log('featureRouter -> delete Feature FIRED ->')

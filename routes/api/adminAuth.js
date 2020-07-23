@@ -13,7 +13,6 @@ const Admin = require("../../models/Admin");
 // Add Admin Account - Register Admin
 router.post(
   "/register/",
-
   [  // Express Validator
     check("email", "Please include a valid email").isEmail(),
     check(
@@ -28,8 +27,14 @@ router.post(
       return res.status(400).json({
         errors: errors.array(),
       });
-    }
+    }    
     try {
+      let i = 1+1;
+      if ( i === 2 ) {
+        return res
+          .status(400)
+          .json({ errors: [{ msg: "Registration as an admin is not allowed at the moment!" }] });
+      }
       // See if user username exists
       let isAdminExist = await Admin.findOne({ email: req.body.email });
       if (isAdminExist) {

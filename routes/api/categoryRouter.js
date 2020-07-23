@@ -180,7 +180,7 @@ router.post(
 // Get Categories
 router.get(
   "/", 
-  // authAdminMiddleware, 
+  authAdminMiddleware, 
   async (req, res) => {
     try {
       const categories = await Category.find({});
